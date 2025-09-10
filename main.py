@@ -73,6 +73,15 @@ def create_animal(animal: AnimalCreate, db: Session = Depends(get_db)):
     return db_animal
 
 
+# Get animal by ID
+@app.get("/animals/{animal_id}/", response_model=AnimalRead)
+def read_animal(animal_id: int, db: Session = Depends(get_db)):
+    db_animal = db.query(AnimalORM).filter(AnimalORM.id == animal_id).first()
+    if db_animal is None:
+        raise HTTPException(status_code=404, detail="Animal not found")
+    return db_animal
+
+
 # List all animals
 @app.get("/animals/", response_model=list[AnimalRead])
 def list_animals(db: Session = Depends(get_db)):
@@ -83,3 +92,10 @@ def list_animals(db: Session = Depends(get_db)):
 @app.get("/animals/endangered/", response_model=list[AnimalRead])
 def list_endangered_animals(db: Session = Depends(get_db)):
     return db.query(AnimalORM).filter(AnimalORM.is_endangered == True).all()
+
+
+# Get oldest animal
+@app.get("/animals/oldest/", response_model=AnimalRead)
+def read_oldest_animal(db: Session = Depends(get_db)):
+    return db.query(AnimalORM).order_by(AnimalORM.age.desc()).first()
+

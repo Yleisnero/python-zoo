@@ -61,6 +61,23 @@ def test_create_animal(client: TestClient):
     assert "id" in data
 
 
+def test_read_animal_by_id(client: TestClient):
+    a1 = {"name": "Simba", "species": "Lion", "age": 5, "is_endangered": True}
+    create_response = client.post(
+        "/animals/",
+        json=a1,
+    )
+    create_data = create_response.json()
+
+    read_response = client.get(f"/animals/{create_data['id']}/")
+    data = read_response.json()
+    assert read_response.status_code == 200
+    assert data["name"] == a1["name"]
+    assert data["species"] == a1["species"]
+    assert data["age"] == a1["age"]
+    assert data["is_endangered"] == a1["is_endangered"]
+
+
 def test_create_duplicate_animal(client: TestClient):
     client.post(
         "/animals/",
@@ -102,3 +119,19 @@ def test_list_endangered_animals(session: Session, client: TestClient):
     assert response.status_code == 200
     assert len(data) == 1
     assert data[0]["name"] == "Panda"
+
+
+def test_read_oldest_animal(session: Session, client: TestClient):
+    a1 = AnimalORM(name="Panda", species="Bear", age=3, is_endangered=True)
+    a2 = AnimalORM(name="Elephant", species="Mammal", age=25, is_endangered=False)
+    a3 = AnimalORM(name="Tortoise", species="Tortoise", age=111, is_endangered=True)
+    a4 = AnimalORM(name="Giraffe", species="Mammal", age=12, is_endangered=False)
+    session.add_all([a1, a2, a3, a4])
+    session.commit()
+
+    response = client.get("/animals/oldest/")
+    data = response.json()
+
+    assert response.status_code == 200
+    assert data["name"] == "Tortoise"
+    assert data["age"] == 111
